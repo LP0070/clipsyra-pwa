@@ -155,6 +155,17 @@ body{display:block;padding:0;overscroll-behavior:none;-webkit-user-select:none;u
 #lockGate .pad{display:grid;grid-template-columns:repeat(3,64px);gap:10px;justify-content:center}
 #lockGate .pad button{width:64px;height:52px;border-radius:14px;background:rgba(66,217,255,.07);border:1px solid rgba(66,217,255,.25);color:var(--ltxt);font-size:18px;font-weight:700;cursor:pointer}
 #lockGate .pad button:active{background:rgba(66,217,255,.2)}
+/* ===== Auth E2E ===== */
+#authGate{position:fixed;inset:0;z-index:150;display:none;align-items:center;justify-content:center;background:#04061a;padding:24px;font-family:-apple-system,'SF Pro Text',Inter,'Segoe UI',sans-serif}
+.auth-card{width:100%;max-width:340px;text-align:center}
+.auth-logo{width:76px;height:76px;margin-bottom:16px}
+#authGate h2{font-size:22px;font-weight:800;color:#f1f3ff;margin-bottom:6px}
+#authGate .sub{font-size:13px;color:#9aa0c7;margin-bottom:20px}
+#authGate input{width:100%;padding:14px 16px;margin-bottom:12px;border-radius:14px;border:1px solid rgba(139,92,246,.25);background:#131840;color:#f1f3ff;font-size:16px;outline:none}
+#authGate input:focus{border-color:#8b5cf6}
+#loginBtn{width:100%;padding:15px;border:none;border-radius:14px;background:linear-gradient(135deg,#8b5cf6,#3b82f6);color:#fff;font-size:16px;font-weight:700;cursor:pointer;box-shadow:0 8px 24px rgba(139,92,246,.35)}
+#loginBtn:disabled{opacity:.6}
+#loginError{color:#f87171;font-size:13px;min-height:22px;margin:4px 0 8px}
 #lockGate .lock{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:30px 24px;background:radial-gradient(ellipse 80% 55% at 50% 32%,rgba(124,92,255,.16),transparent),var(--lbg)}
 #lockGate .lock-logo{font-size:15px;font-weight:800;letter-spacing:3px;color:var(--lmut);margin-bottom:26px}
 #lockGate .lock-logo span{color:var(--laccent)}
@@ -204,6 +215,18 @@ body{display:block;padding:0;overscroll-behavior:none;-webkit-user-select:none;u
     </div>
   </div>
   
+</div>
+
+<div id="authGate">
+  <div class="auth-card">
+    <img src="icons/icon-192.png" class="auth-logo" alt="CLIPSYRA">
+    <h2>Inicia sesi&oacute;n</h2>
+    <div class="sub">Usa tu cuenta del entorno E2E de CLIPSYRA.</div>
+    <input id="loginEmail" type="email" placeholder="Email" autocomplete="username" autocapitalize="none">
+    <input id="loginPass" type="password" placeholder="Contrase&ntilde;a" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+    <div id="loginError"></div>
+    <button id="loginBtn" onclick="doLogin()">Entrar</button>
+  </div>
 </div>
 
 <div class="phone" id="appShell">
@@ -377,6 +400,8 @@ body{display:block;padding:0;overscroll-behavior:none;-webkit-user-select:none;u
   <div class="menu-item" onclick="go('billing')"><div class="mi" style="background:rgba(251,191,36,.15)">💳</div><b>Facturación</b><span class="chev">›</span></div>
   <div class="menu-item"><div class="mi" style="background:rgba(139,144,184,.15)">⚙️</div><b>Ajustes</b><span class="chev">›</span></div>
   <div class="menu-item"><div class="mi" style="background:rgba(139,144,184,.15)">❓</div><b>Ayuda y soporte</b><span class="chev">›</span></div>
+  <div class="menu-item" onclick="doLogout()"><div class="mi" style="background:rgba(248,113,113,.15)">🚪</div><b>Cerrar sesión</b><span class="chev">›</span></div>
+  <div class="greet" style="text-align:center" id="authEmailLabel"></div>
 </div>
 
 <!-- ============ ANALYTICS ============ -->
@@ -399,7 +424,7 @@ body{display:block;padding:0;overscroll-behavior:none;-webkit-user-select:none;u
 <div class="view" id="v-billing">
   <div class="greet">Suscripción</div>
   <h1 class="hero">Factu<em>ración</em></h1>
-  <div class="card"><div class="row-between"><span class="mut">Minutos disponibles</span><b style="font-size:20px">200</b></div><div class="bar"><i style="width:100%"></i></div><div class="mut" style="margin-top:8px">0.0 / 200 min usados este mes</div></div>
+  <div class="card"><div class="row-between"><span class="mut">Minutos disponibles</span><b style="font-size:20px" id="billingMinutes">200</b></div><div class="bar"><i style="width:100%"></i></div><div class="mut" style="margin-top:8px">0.0 / 200 min usados este mes</div></div>
   <div class="plan"><div class="pname">Free</div><div class="price">$0<small>/mes</small></div><ul><li>30 minutos gratis</li><li>720p</li><li>3 proyectos</li></ul><button class="btn ghost">Plan actual</button></div>
   <div class="plan current"><span class="cur-tag">ACTUAL</span><div class="pname">Creator ⭐</div><div class="price">$19<small>/mes</small></div><ul><li>200 minutos / mes</li><li>1080p + subtítulos IA</li><li>Proyectos ilimitados</li><li>Asistente SYRA</li></ul><button class="btn ghost">✓ Tu plan</button></div>
   <div class="plan"><div class="pname">Business 🌍</div><div class="price">$49<small>/mes</small></div><ul><li>1,000 minutos / mes</li><li>Todo lo de Creator</li><li>Parallel 2.0 multi-idioma</li><li>Brand Kit + Equipo</li></ul><button class="btn">Mejorar a Business</button></div>
@@ -448,8 +473,9 @@ document.addEventListener('click',function(e){
 var pinBuf='';
 function unlockApp(){
   var g=document.getElementById('lockGate'); if(g) g.style.display='none';
-  var a=document.getElementById('appShell'); if(a) a.style.display='flex';
   try{sessionStorage.setItem('clipsyra.unlocked','1');}catch(e){}
+  if(typeof ensureSessionUI==='function') ensureSessionUI();
+  else { var a=document.getElementById('appShell'); if(a) a.style.display='flex'; }
 }
 function paintPin(){
   var dots=document.querySelectorAll('#lockGate .pin i');
@@ -506,6 +532,95 @@ async function bioUnlock(){
 }
 try{ if(sessionStorage.getItem('clipsyra.unlocked')==='1'){ unlockApp(); } }catch(e){}
 if('serviceWorker' in navigator){ window.addEventListener('load',function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); }); }
+
+</script>
+<script>
+
+/* ===== CLIPSYRA PWA: backend E2E (Supabase Auth + /api/me) ===== */
+var E2E_API='https://clipforge-web-e2e-test.onrender.com';
+var SB_URL='https://lvbubvqprqgbtsdklviz.supabase.co';
+var SB_KEY='sb_publishable_ooKTT5NHx39bPRwtQFvN-w_dyJFH2oe';
+function getSession(){ try{ return JSON.parse(localStorage.getItem('clipsyra.e2e.session')||'null'); }catch(e){ return null; } }
+function setSession(s){ try{ if(s) localStorage.setItem('clipsyra.e2e.session',JSON.stringify(s)); else localStorage.removeItem('clipsyra.e2e.session'); }catch(e){} }
+async function sbSignIn(email,password){
+  var r=await fetch(SB_URL+'/auth/v1/token?grant_type=password',{method:'POST',headers:{'apikey':SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({email:email,password:password})});
+  var d=await r.json();
+  if(!r.ok) throw new Error(d.error_description||d.msg||('HTTP '+r.status));
+  return {access_token:d.access_token,refresh_token:d.refresh_token,expires_at:Date.now()+(d.expires_in||3600)*1000,email:(d.user&&d.user.email)||email};
+}
+async function sbRefresh(sess){
+  var r=await fetch(SB_URL+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{'apikey':SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:sess.refresh_token})});
+  if(!r.ok) throw new Error('refresh_failed');
+  var d=await r.json();
+  return {access_token:d.access_token,refresh_token:d.refresh_token||sess.refresh_token,expires_at:Date.now()+(d.expires_in||3600)*1000,email:sess.email};
+}
+async function apiMe(token){
+  var r=await fetch(E2E_API+'/api/me',{headers:{'Authorization':'Bearer '+token}});
+  if(!r.ok) throw new Error('me_'+r.status);
+  return r.json();
+}
+function paintMe(me){
+  var plan=(me.plan||'free'), pname=plan.charAt(0).toUpperCase()+plan.slice(1), mins=Math.floor(me.creditsMinutes||0);
+  var chip=document.querySelector('#appShell .plan-chip');
+  if(chip){
+    chip.innerHTML='<span class="dot"></span><b>'+pname+'</b><small>'+mins+' min</small>';
+    var dot=chip.querySelector('.dot');
+    if(dot) dot.style.background = plan==='business' ? '#42d9ff' : (plan==='creator' ? '#fbbf24' : '#9aa0c7');
+  }
+  var av=document.querySelector('#appShell .avatar');
+  if(av && me.email) av.textContent=me.email.charAt(0).toUpperCase();
+  var bm=document.getElementById('billingMinutes');
+  if(bm) bm.textContent=mins;
+  var cards=document.querySelectorAll('#appShell .plan'), anyCur=false;
+  var order={free:0,creator:1,business:2};
+  var cap=function(s){ return s.charAt(0).toUpperCase()+s.slice(1); };
+  cards.forEach(function(c){
+    var n=c.querySelector('.pname'); if(!n) return;
+    var t=n.textContent.toLowerCase();
+    var cplan=t.indexOf('business')>-1?'business':(t.indexOf('creator')>-1?'creator':'free');
+    var isCur=cplan===plan;
+    c.classList.toggle('current',isCur); if(isCur) anyCur=true;
+    var tag=c.querySelector('.cur-tag');
+    if(isCur&&!tag){ tag=document.createElement('span'); tag.className='cur-tag'; tag.textContent='ACTUAL'; c.insertBefore(tag,c.firstChild); }
+    if(tag) tag.style.display=isCur?'':'none';
+    var btn=c.querySelector('button');
+    if(btn){
+      if(isCur){ btn.innerHTML='✓ Tu plan'; btn.disabled=true; }
+      else if(order[cplan]>order[plan]){ btn.innerHTML='Mejorar a '+cap(cplan); btn.disabled=false; }
+      else { btn.innerHTML='Ver plan'; btn.disabled=false; }
+    }
+  });
+  var em=document.getElementById('authEmailLabel');
+  if(em) em.textContent=me.email||'';
+}
+function showAuth(show){
+  var auth=document.getElementById('authGate'), app=document.getElementById('appShell');
+  if(auth) auth.style.display=show?'flex':'none';
+  if(app) app.style.display=show?'none':'flex';
+}
+async function ensureSessionUI(){
+  var sess=getSession();
+  if(sess && sess.expires_at < Date.now()+60000){
+    try{ sess=await sbRefresh(sess); setSession(sess); }catch(e){ sess=null; setSession(null); }
+  }
+  if(!sess){ showAuth(true); return; }
+  try{ paintMe(await apiMe(sess.access_token)); showAuth(false); }
+  catch(e){
+    try{ sess=await sbRefresh(sess); setSession(sess); paintMe(await apiMe(sess.access_token)); showAuth(false); }
+    catch(e2){ setSession(null); showAuth(true); }
+  }
+}
+async function doLogin(){
+  var e=document.getElementById('loginEmail').value.trim(), p=document.getElementById('loginPass').value;
+  var err=document.getElementById('loginError'), btn=document.getElementById('loginBtn');
+  err.textContent='';
+  if(!e||!p){ err.textContent='Escribe email y contraseña.'; return; }
+  btn.disabled=true; btn.textContent='Entrando…';
+  try{ setSession(await sbSignIn(e,p)); await ensureSessionUI(); }
+  catch(ex){ err.textContent='No se pudo entrar. Revisa email y contraseña (entorno E2E).'; }
+  btn.disabled=false; btn.textContent='Entrar';
+}
+function doLogout(){ setSession(null); try{sessionStorage.removeItem('clipsyra.unlocked');}catch(e){} showAuth(true); }
 
 </script>
 <script>
